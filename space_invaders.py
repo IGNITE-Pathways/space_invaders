@@ -105,7 +105,7 @@ def game_over_text(final_time):
     over_text = over_font.render("GAME OVER", True, (255, 255, 255))
     screen.blit(over_text, (200, 250))
     time_text = font.render("Final Time: " + str(final_time) + "s", True, (255, 255, 255))
-    screen.blit(time_text, (250, 320))
+    screen.blit(time_text, (280, 320))
 
 def player(x, y):
     screen.blit(player_img, (x, y))
