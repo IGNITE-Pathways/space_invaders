@@ -17,13 +17,22 @@ pygame.display.set_caption("Space Invaders")
 icon = pygame.image.load('spaceship.png')
 pygame.display.set_icon(icon)
 
+# Load Splash Screen
+splash_screen = pygame.image.load('splash.png')
+splash_screen = pygame.transform.scale(splash_screen, (screen_width, screen_height))
+
+def show_splash_screen():
+    screen.blit(splash_screen, (0, 0))
+    pygame.display.update()
+    pygame.time.delay(5000)  # Wait for 5 seconds
+
 # Player
 player_img = pygame.image.load('player.png')
 player_x = 370
 player_y = 480
 player_x_change = 0
-player_speed = 4 
-player_lives = 5
+player_speed = 5
+player_lives = 3
 
 # Enemy
 enemy_imgs = ['enemy1.png', 'enemy2.png', 'enemy3.png']
@@ -114,8 +123,12 @@ def is_player_hit(enemy_bullet_x, enemy_bullet_y, player_x, player_y):
     distance = math.sqrt(math.pow(enemy_bullet_x - player_x, 2) + math.pow(enemy_bullet_y - player_y, 2))
     return distance < 27
 
+# Show splash screen before starting the game
+show_splash_screen()
+
 # Game Loop
 running = True
+player_hit_timer = 0
 while running:
     # RGB - Red, Green, Blue
     screen.fill((0, 0, 0))
@@ -183,15 +196,17 @@ while running:
         # Collision with player
         player_hit = is_player_hit(enemy_bullet_x[i], enemy_bullet_y[i], player_x, player_y)
         if player_hit:
-            player_lives -= 1
-            enemy_bullet_state[i] = "ready"
-            if player_lives <= 0:
-                player_lives = 0
-                for j in range(num_of_enemies):
-                    enemy_y[j] = 2000
-                game_over_text()
-                running = False
-                break
+            if pygame.time.get_ticks() - player_hit_timer > 1000:  # Add delay after hit
+                player_lives -= 1
+                player_hit_timer = pygame.time.get_ticks()
+                enemy_bullet_state[i] = "ready"
+                if player_lives <= 0:
+                    player_lives = 0
+                    for j in range(num_of_enemies):
+                        enemy_y[j] = 2000
+                    game_over_text()
+                    running = False
+                    break
 
         enemy(enemy_x[i], enemy_y[i], i)
 
