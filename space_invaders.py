@@ -32,6 +32,11 @@ enemy_x = []
 enemy_y = []
 enemy_x_change = []
 enemy_y_change = []
+enemy_bullet_img = pygame.image.load('enemy_bullet.png')
+enemy_bullet_x = []
+enemy_bullet_y = []
+enemy_bullet_y_change = []
+enemy_bullet_state = []
 num_of_enemies = 5
 
 for i in range(num_of_enemies):
@@ -40,6 +45,10 @@ for i in range(num_of_enemies):
     enemy_y.append(random.randint(50, 150))
     enemy_x_change.append(random.randint(1, 2))  # Slowing down the enemy speed
     enemy_y_change.append(30)
+    enemy_bullet_x.append(0)
+    enemy_bullet_y.append(enemy_y[i])
+    enemy_bullet_y_change.append(5)
+    enemy_bullet_state.append("ready")  # "ready" - you can't see the bullet on the screen, "fire" - the bullet is moving
 
 # Bullet
 bullet_img = pygame.image.load('bullet.png')
@@ -87,6 +96,11 @@ def fire_bullet(x, y):
     bullet_state = "fire"
     screen.blit(bullet_img, (x + 16, y + 10))
 
+def fire_enemy_bullet(x, y, i):
+    global enemy_bullet_state
+    enemy_bullet_state[i] = "fire"
+    screen.blit(enemy_bullet_img, (x + 16, y + 10))
+
 def show_explosion(x, y):
     screen.blit(explosion_img, (x, y))
 
@@ -94,8 +108,8 @@ def is_collision(enemy_x, enemy_y, bullet_x, bullet_y):
     distance = math.sqrt(math.pow(enemy_x - bullet_x, 2) + math.pow(enemy_y - bullet_y, 2))
     return distance < 27
 
-def is_player_hit(enemy_x, enemy_y, player_x, player_y):
-    distance = math.sqrt(math.pow(enemy_x - player_x, 2) + math.pow(enemy_y - player_y, 2))
+def is_player_hit(enemy_bullet_x, enemy_bullet_y, player_x, player_y):
+    distance = math.sqrt(math.pow(enemy_bullet_x - player_x, 2) + math.pow(enemy_bullet_y - player_y, 2))
     return distance < 27
 
 # Game Loop
@@ -140,6 +154,19 @@ while running:
             enemy_x_change[i] = -2  # Adjusted speed
             enemy_y[i] += enemy_y_change[i]
 
+        # Enemy Bullet Movement
+        if enemy_bullet_state[i] == "ready":
+            enemy_bullet_x[i] = enemy_x[i]
+            enemy_bullet_y[i] = enemy_y[i]
+            fire_enemy_bullet(enemy_bullet_x[i], enemy_bullet_y[i], i)
+
+        if enemy_bullet_state[i] == "fire":
+            fire_enemy_bullet(enemy_bullet_x[i], enemy_bullet_y[i], i)
+            enemy_bullet_y[i] += enemy_bullet_y_change[i]
+
+        if enemy_bullet_y[i] > 600:
+            enemy_bullet_state[i] = "ready"
+
         # Collision with bullet
         collision = is_collision(enemy_x[i], enemy_y[i], bullet_x, bullet_y)
         if collision:
@@ -152,11 +179,10 @@ while running:
             enemy_y[i] = random.randint(50, 150)
 
         # Collision with player
-        player_hit = is_player_hit(enemy_x[i], enemy_y[i], player_x, player_y)
+        player_hit = is_player_hit(enemy_bullet_x[i], enemy_bullet_y[i], player_x, player_y)
         if player_hit:
             player_lives -= 1
-            enemy_x[i] = random.randint(0, 735)
-            enemy_y[i] = random.randint(50, 150)
+            enemy_bullet_state[i] = "ready"
             if player_lives == 0:
                 for j in range(num_of_enemies):
                     enemy_y[j] = 2000
