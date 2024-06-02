@@ -24,15 +24,15 @@ splash_screen = pygame.transform.scale(splash_screen, (screen_width, screen_heig
 def show_splash_screen():
     screen.blit(splash_screen, (0, 0))
     pygame.display.update()
-    pygame.time.delay(5000)  # Wait for 5 seconds
+    pygame.time.delay(2000)  # Wait for 2 seconds
 
 # Player
 player_img = pygame.image.load('player.png')
 player_x = 370
 player_y = 480
 player_x_change = 0
-player_speed = 5
-player_lives = 3
+player_speed = 3
+player_lives = 5
 
 # Enemy
 enemy_imgs = ['enemy1.png', 'enemy2.png', 'enemy3.png']
@@ -54,7 +54,7 @@ for i in range(num_of_enemies):
     enemy_x.append(random.randint(0, 735))
     enemy_y.append(random.randint(50, 150))
     enemy_x_change.append(random.randint(1, 2))  # Slowing down the enemy speed
-    enemy_y_change.append(30)
+    enemy_y_change.append(20)
     enemy_bullet_x.append(0)
     enemy_bullet_y.append(enemy_y[i])
     enemy_bullet_y_change.append(1)  # Slower enemy bullet speed
@@ -81,6 +81,9 @@ font = pygame.font.Font('freesansbold.ttf', 32)
 text_x = 10
 text_y = 10
 
+# Timer
+start_ticks = pygame.time.get_ticks()  # Start timer
+
 # Game Over Text
 over_font = pygame.font.Font('freesansbold.ttf', 64)
 
@@ -92,9 +95,17 @@ def show_lives(x, y):
     lives = font.render("Lives: " + str(player_lives), True, (255, 255, 255))
     screen.blit(lives, (x, y))
 
-def game_over_text():
+def show_timer(x, y):
+    elapsed_time = (pygame.time.get_ticks() - start_ticks) // 1000  # Convert to seconds
+    timer = font.render("Time: " + str(elapsed_time), True, (255, 255, 255))
+    screen.blit(timer, (x, y))
+    return elapsed_time
+
+def game_over_text(final_time):
     over_text = over_font.render("GAME OVER", True, (255, 255, 255))
     screen.blit(over_text, (200, 250))
+    time_text = font.render("Final Time: " + str(final_time) + "s", True, (255, 255, 255))
+    screen.blit(time_text, (250, 320))
 
 def player(x, y):
     screen.blit(player_img, (x, y))
@@ -105,7 +116,7 @@ def enemy(x, y, i):
 def fire_bullet(x, y):
     global bullet_state
     bullet_state = "fire"
-    screen.blit(bullet_img, (x + 16, y + 10))
+    screen.blit(bullet_img, (x + 2, y + 20))
 
 def fire_enemy_bullet(x, y, i):
     global enemy_bullet_state
@@ -128,7 +139,9 @@ show_splash_screen()
 
 # Game Loop
 running = True
+game_over = False
 player_hit_timer = 0
+final_time = 0
 while running:
     # RGB - Red, Green, Blue
     screen.fill((0, 0, 0))
@@ -137,95 +150,101 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        # If keystroke is pressed check whether its right or left
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                player_x_change = -player_speed
-            if event.key == pygame.K_RIGHT:
-                player_x_change = player_speed
-            if event.key == pygame.K_SPACE:
-                if bullet_state == "ready":
-                    bullet_x = player_x
-                    fire_bullet(bullet_x, bullet_y)
+        if not game_over:
+            # If keystroke is pressed check whether its right or left
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT:
+                    player_x_change = -player_speed
+                if event.key == pygame.K_RIGHT:
+                    player_x_change = player_speed
+                if event.key == pygame.K_SPACE:
+                    if bullet_state == "ready":
+                        bullet_x = player_x
+                        fire_bullet(bullet_x, bullet_y)
 
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                player_x_change = 0
+            if event.type == pygame.KEYUP:
+                if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+                    player_x_change = 0
 
-    # Checking for boundaries of spaceship
-    player_x += player_x_change
-    if player_x <= 0:
-        player_x = 0
-    elif player_x >= 736:
-        player_x = 736
+    if not game_over:
+        # Checking for boundaries of spaceship
+        player_x += player_x_change
+        if player_x <= 0:
+            player_x = 0
+        elif player_x >= 736:
+            player_x = 736
 
-    # Enemy Movement
-    for i in range(num_of_enemies):
-        enemy_x[i] += enemy_x_change[i]
-        if enemy_x[i] <= 0:
-            enemy_x_change[i] = 2  # Adjusted speed
-            enemy_y[i] += enemy_y_change[i]
-        elif enemy_x[i] >= 736:
-            enemy_x_change[i] = -2  # Adjusted speed
-            enemy_y[i] += enemy_y_change[i]
+        # Enemy Movement
+        for i in range(num_of_enemies):
+            enemy_x[i] += enemy_x_change[i]
+            if enemy_x[i] <= 0:
+                enemy_x_change[i] = 2  # Adjusted speed
+                enemy_y[i] += enemy_y_change[i]
+            elif enemy_x[i] >= 736:
+                enemy_x_change[i] = -2  # Adjusted speed
+                enemy_y[i] += enemy_y_change[i]
 
-        # Enemy Shooting
-        if enemy_bullet_state[i] == "ready" and random.randint(0, 1000) < 2:  # Random chance to shoot
-            enemy_bullet_x[i] = enemy_x[i]
-            enemy_bullet_y[i] = enemy_y[i]
-            fire_enemy_bullet(enemy_bullet_x[i], enemy_bullet_y[i], i)
+            # Enemy Shooting
+            if enemy_bullet_state[i] == "ready" and random.randint(0, 1000) < 2:  # Random chance to shoot
+                enemy_bullet_x[i] = enemy_x[i]
+                enemy_bullet_y[i] = enemy_y[i]
+                fire_enemy_bullet(enemy_bullet_x[i], enemy_bullet_y[i], i)
 
-        if enemy_bullet_state[i] == "fire":
-            fire_enemy_bullet(enemy_bullet_x[i], enemy_bullet_y[i], i)
-            enemy_bullet_y[i] += enemy_bullet_y_change[i]
+            if enemy_bullet_state[i] == "fire":
+                fire_enemy_bullet(enemy_bullet_x[i], enemy_bullet_y[i], i)
+                enemy_bullet_y[i] += enemy_bullet_y_change[i]
 
-        if enemy_bullet_y[i] > 600:
-            enemy_bullet_state[i] = "ready"
+            if enemy_bullet_y[i] > 600:
+                enemy_bullet_state[i] = "ready"
 
-        # Collision with bullet
-        collision = is_collision(enemy_x[i], enemy_y[i], bullet_x, bullet_y)
-        if collision:
+            # Collision with bullet
+            collision = is_collision(enemy_x[i], enemy_y[i], bullet_x, bullet_y)
+            if collision:
+                bullet_y = 480
+                bullet_state = "ready"
+                score_value += 1
+                explosion_x, explosion_y = enemy_x[i], enemy_y[i]
+                explosion_counter = 30  # Display explosion for a short duration
+                enemy_x[i] = random.randint(0, 735)
+                enemy_y[i] = random.randint(50, 150)
+
+            # Collision with player
+            player_hit = is_player_hit(enemy_bullet_x[i], enemy_bullet_y[i], player_x, player_y)
+            if player_hit:
+                if pygame.time.get_ticks() - player_hit_timer > 1000:  # Add delay after hit
+                    player_lives -= 1
+                    player_hit_timer = pygame.time.get_ticks()
+                    enemy_bullet_state[i] = "ready"
+                    if player_lives <= 0:
+                        player_lives = 0
+                        final_time = show_timer(screen_width - 150, 10)
+                        for j in range(num_of_enemies):
+                            enemy_y[j] = 2000
+                        game_over = True
+                        break
+
+            enemy(enemy_x[i], enemy_y[i], i)
+
+        # Bullet Movement
+        if bullet_state == "fire":
+            fire_bullet(bullet_x, bullet_y)
+            bullet_y -= bullet_y_change
+
+        if bullet_y <= 0:
             bullet_y = 480
             bullet_state = "ready"
-            score_value += 1
-            explosion_x, explosion_y = enemy_x[i], enemy_y[i]
-            explosion_counter = 30  # Display explosion for a short duration
-            enemy_x[i] = random.randint(0, 735)
-            enemy_y[i] = random.randint(50, 150)
 
-        # Collision with player
-        player_hit = is_player_hit(enemy_bullet_x[i], enemy_bullet_y[i], player_x, player_y)
-        if player_hit:
-            if pygame.time.get_ticks() - player_hit_timer > 1000:  # Add delay after hit
-                player_lives -= 1
-                player_hit_timer = pygame.time.get_ticks()
-                enemy_bullet_state[i] = "ready"
-                if player_lives <= 0:
-                    player_lives = 0
-                    for j in range(num_of_enemies):
-                        enemy_y[j] = 2000
-                    game_over_text()
-                    running = False
-                    break
+        player(player_x, player_y)
+        show_score(text_x, text_y)
+        show_lives(text_x, text_y + 40)  # Display lives below the score
+        final_time = show_timer(screen_width - 150, 10)  # Display timer on the top-right
 
-        enemy(enemy_x[i], enemy_y[i], i)
+        # Display explosion for a short duration
+        if explosion_counter > 0:
+            show_explosion(explosion_x, explosion_y)
+            explosion_counter -= 1
 
-    # Bullet Movement
-    if bullet_state == "fire":
-        fire_bullet(bullet_x, bullet_y)
-        bullet_y -= bullet_y_change
-
-    if bullet_y <= 0:
-        bullet_y = 480
-        bullet_state = "ready"
-
-    player(player_x, player_y)
-    show_score(text_x, text_y)
-    show_lives(text_x, text_y + 40)  # Display lives below the score
-
-    # Display explosion for a short duration
-    if explosion_counter > 0:
-        show_explosion(explosion_x, explosion_y)
-        explosion_counter -= 1
+    if game_over:
+        game_over_text(final_time)
 
     pygame.display.update()
