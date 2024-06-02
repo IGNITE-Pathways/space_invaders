@@ -22,8 +22,8 @@ player_img = pygame.image.load('player.png')
 player_x = 370
 player_y = 480
 player_x_change = 0
-player_speed = 5
-player_lives = 3
+player_speed = 4 
+player_lives = 5
 
 # Enemy
 enemy_imgs = ['enemy1.png', 'enemy2.png', 'enemy3.png']
@@ -37,7 +37,8 @@ enemy_bullet_x = []
 enemy_bullet_y = []
 enemy_bullet_y_change = []
 enemy_bullet_state = []
-num_of_enemies = 5
+enemy_shoot_timer = []
+num_of_enemies = 3
 
 for i in range(num_of_enemies):
     enemy_img.append(pygame.image.load(random.choice(enemy_imgs)))
@@ -47,8 +48,9 @@ for i in range(num_of_enemies):
     enemy_y_change.append(30)
     enemy_bullet_x.append(0)
     enemy_bullet_y.append(enemy_y[i])
-    enemy_bullet_y_change.append(5)
+    enemy_bullet_y_change.append(1)  # Slower enemy bullet speed
     enemy_bullet_state.append("ready")  # "ready" - you can't see the bullet on the screen, "fire" - the bullet is moving
+    enemy_shoot_timer.append(random.randint(1000, 3000))  # Random shooting timer
 
 # Bullet
 bullet_img = pygame.image.load('bullet.png')
@@ -154,8 +156,8 @@ while running:
             enemy_x_change[i] = -2  # Adjusted speed
             enemy_y[i] += enemy_y_change[i]
 
-        # Enemy Bullet Movement
-        if enemy_bullet_state[i] == "ready":
+        # Enemy Shooting
+        if enemy_bullet_state[i] == "ready" and random.randint(0, 1000) < 2:  # Random chance to shoot
             enemy_bullet_x[i] = enemy_x[i]
             enemy_bullet_y[i] = enemy_y[i]
             fire_enemy_bullet(enemy_bullet_x[i], enemy_bullet_y[i], i)
@@ -183,10 +185,12 @@ while running:
         if player_hit:
             player_lives -= 1
             enemy_bullet_state[i] = "ready"
-            if player_lives == 0:
+            if player_lives <= 0:
+                player_lives = 0
                 for j in range(num_of_enemies):
                     enemy_y[j] = 2000
                 game_over_text()
+                running = False
                 break
 
         enemy(enemy_x[i], enemy_y[i], i)
